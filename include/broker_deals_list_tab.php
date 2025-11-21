@@ -4,8 +4,12 @@ if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) {
 }
 
 use Bitrix\Main\Loader;
+use Bitrix\Main\UI\PageNavigation;
+use Bitrix\Crm\Service;
 
 global $APPLICATION;
+
+require_once $_SERVER['DOCUMENT_ROOT'] . '/include/broker_handler.php';
 
 $broker = broker_current();
 if ($broker === null) {
@@ -24,6 +28,26 @@ if ($brokerName === '') {
     return;
 }
 
+$gridId = 'BROKER_DEALS_GRID';
+
+$allowedPageSizes = [10, 20, 50, 100];
+$defaultPageSize = 20;
+
+$pageSize = $defaultPageSize;
+if (isset($_GET['per_page'])) {
+    $tmp = (int)$_GET['per_page'];
+    if (in_array($tmp, $allowedPageSizes, true)) {
+        $pageSize = $tmp;
+    }
+}
+
+$nav = new PageNavigation($gridId);
+$nav->allowAllRecords(false)
+    ->setPageSize($pageSize)
+    ->initFromUri();
+
+$currentPage = max(1, $nav->getCurrentPage());
+
 $select = [
     'ID',
     'TITLE',
@@ -32,6 +56,8 @@ $select = [
     'CURRENCY_ID',
     'CONTACT_ID',
     'UF_CRM_1763708684',
+    'UF_CRM_1756215456',
+    'UF_CRM_1756215507',
 ];
 
 $filter = [
@@ -40,15 +66,24 @@ $filter = [
     'CHECK_PERMISSIONS'   => 'N',
 ];
 
+$totalCount = (int)CCrmDeal::GetListEx([], $filter, []);
+
+$nav->setRecordCount($totalCount);
+
 $dealsRows = [];
 $deals     = [];
 $contactIds = [];
+
+$navParams = [
+    'iNumPage' => $currentPage,
+    'nPageSize' => $pageSize,
+];
 
 $res = CCrmDeal::GetListEx(
     ['ID' => 'DESC'],
     $filter,
     false,
-    ['nTopCount' => 200],
+    $navParams,
     $select
 );
 
@@ -91,6 +126,9 @@ $stageMap = [
     'APOLOGY'            => 'Resale',
 ];
 
+$unitsFactory = Service\Container::getInstance()->getFactory(1032);
+$projectsFactory = Service\Container::getInstance()->getFactory(1036);
+
 foreach ($deals as $id => $row) {
     $dealCode = 'D-' . $id;
 
@@ -109,6 +147,30 @@ foreach ($deals as $id => $row) {
             . ' ' . ($row['CURRENCY_ID'] ?: 'AED');
     }
 
+    $projectName = '';
+    $projectBinding = (string)($row['UF_CRM_1756215456'] ?? '');
+    if ($projectBinding !== '' && strpos($projectBinding, 'T40c_') === 0) {
+        $projectId = (int)substr($projectBinding, 5);
+        if ($projectId > 0 && $projectsFactory !== null) {
+            $projectItem = $projectsFactory->getItem($projectId);
+            if ($projectItem !== null) {
+                $projectName = (string)$projectItem->getTitle();
+            }
+        }
+    }
+
+    $unitName = '';
+    $unitBinding = (string)($row['UF_CRM_1756215507'] ?? '');
+    if ($unitBinding !== '' && strpos($unitBinding, 'T408_') === 0) {
+        $unitId = (int)substr($unitBinding, 5);
+        if ($unitId > 0 && $unitsFactory !== null) {
+            $unitItem = $unitsFactory->getItem($unitId);
+            if ($unitItem !== null) {
+                $unitName = (string)$unitItem->getTitle();
+            }
+        }
+    }
+
     $editUrl = '/broker/deal_edit.php?DEAL_ID=' . $id;
 
     $actionsHtml =
@@ -125,14 +187,18 @@ foreach ($deals as $id => $row) {
         'columns' => [
             'DEAL_ID' => $dealCode,
             'CLIENT'  => $clientName,
-            'PROJECT' => '',
-            'UNIT'    => '',
+            'PROJECT' => $projectName,
+            'UNIT'    => $unitName,
             'STATUS'  => $statusName,
             'AMOUNT'  => $amount,
             'ACTIONS' => $actionsHtml,
         ],
     ];
 }
+
+$currentUrl = strtok($_SERVER['REQUEST_URI'], '?');
+$baseQuery = $_GET;
+unset($baseQuery['per_page']);
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -149,8 +215,8 @@ $APPLICATION->IncludeComponent(
     "bitrix:main.ui.grid",
     "",
     [
-        "GRID_ID" => "BROKER_DEALS_GRID",
-        "COLUMNS" => [
+        "GRID_ID"                 => $gridId,
+        "COLUMNS"                 => [
             ["id" => "DEAL_ID", "name" => "Deal",         "default" => true],
             ["id" => "CLIENT",  "name" => "Client",       "default" => true],
             ["id" => "PROJECT", "name" => "Project",      "default" => true],
@@ -158,7 +224,52 @@ $APPLICATION->IncludeComponent(
             ["id" => "STATUS",  "name" => "Status",       "default" => true],
             ["id" => "AMOUNT",  "name" => "Amount (AED)", "default" => true],
         ],
-        "ROWS"      => $dealsRows,
-        "AJAX_MODE" => "N",
+        "ROWS"                    => $dealsRows,
+        "NAV_OBJECT"              => $nav,
+        "TOTAL_ROWS_COUNT"        => $totalCount,
+
+        "SHOW_NAVIGATION_PANEL"   => false,
+        "SHOW_PAGINATION"         => false,
+        "SHOW_PAGESIZE"           => false,
+
+        "AJAX_MODE"               => "Y",
+        "AJAX_OPTION_JUMP"        => "N",
+        "AJAX_OPTION_STYLE"       => "N",
+        "SHOW_ROW_CHECKBOXES"     => false,
+        "SHOW_GRID_SETTINGS_MENU" => true,
+        "SHOW_SELECTED_COUNTER"   => false,
+        "SHOW_TOTAL_COUNTER"      => false,
     ]
 );
+?>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="main-ui-pagination">
+        <?php
+        $APPLICATION->IncludeComponent(
+            "bitrix:main.pagenavigation",
+            "grid",
+            [
+                "NAV_OBJECT" => $nav,
+                "SEF_MODE"   => "N",
+            ],
+            false
+        );
+        ?>
+    </div>
+    <div class="main-ui-pagination">
+        <span class="main-ui-pagination-label">Rows per page:</span>
+        <?php foreach ($allowedPageSizes as $size): ?>
+            <?php
+            $query = $baseQuery;
+            $query['per_page'] = $size;
+            $href = $currentUrl . '?' . http_build_query($query);
+            $active = $size === $pageSize;
+            ?>
+            <a href="<?= htmlspecialcharsbx($href) ?>"
+               class="main-ui-pagination-page text-center<?= $active ? ' main-ui-pagination-page-active' : '' ?>">
+                <?= (int)$size ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
+</div>

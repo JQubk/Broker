@@ -34,6 +34,8 @@ $brokerAgencyName = '';
 $brokerCommission = '';
 $brokerCurrency   = '';
 
+$logFile = $_SERVER["DOCUMENT_ROOT"] . '/logs/deal_debug.log';
+
 try {
     if (!Loader::includeModule('crm')) {
         throw new \RuntimeException('CRM module is not available.');
@@ -137,87 +139,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_bitrix_sessid()) {
                 throw new \RuntimeException('CRM module is not available.');
             }
 
-            $userId = is_object($USER) ? (int)$USER->GetID() : 1;
+            $userId = 1;
 
-            $email = $dealData['BUYER_EMAIL'];
-            $phone = $dealData['BUYER_PHONE'];
-
-            $contactId = 0;
-
-            if ($email !== '') {
-                $res = \CCrmFieldMulti::GetList(
-                    [],
-                    [
-                        'ENTITY_ID' => 'CONTACT',
-                        'TYPE_ID'   => 'EMAIL',
-                        'VALUE'     => $email,
-                    ]
-                );
-                if ($row = $res->Fetch()) {
-                    $contactId = (int)$row['ELEMENT_ID'];
-                }
-            }
-
-            if ($contactId <= 0 && $phone !== '') {
-                $res = \CCrmFieldMulti::GetList(
-                    [],
-                    [
-                        'ENTITY_ID' => 'CONTACT',
-                        'TYPE_ID'   => 'PHONE',
-                        'VALUE'     => $phone,
-                    ]
-                );
-                if ($row = $res->Fetch()) {
-                    $contactId = (int)$row['ELEMENT_ID'];
-                }
-            }
+            $contactEntity = new \CCrmContact(false);
 
             $contactFields = [
                 'NAME'           => $dealData['BUYER_FIRST_NAME'],
                 'LAST_NAME'      => $dealData['BUYER_LAST_NAME'],
-                'TYPE_ID'        => 'CLIENT',
-                'SOURCE_ID'      => 'PARTNER',
                 'ASSIGNED_BY_ID' => $userId,
+                'CREATED_BY_ID'  => $userId,
+                'MODIFY_BY_ID'   => $userId,
+                'OPENED'         => 'Y',
             ];
 
-            if ($dealData['BUYER_CITIZENSHIP'] !== '') {
-                $contactFields['UF_CRM_CITIZENSHIP'] = $dealData['BUYER_CITIZENSHIP'];
-            }
-
             $fm = [];
-
-            if ($email !== '') {
-                $fm['EMAIL']['n1'] = [
-                    'VALUE'      => $email,
-                    'VALUE_TYPE' => 'WORK',
+            if ($dealData['BUYER_EMAIL'] !== '') {
+                $fm['EMAIL'] = [
+                    ['VALUE' => $dealData['BUYER_EMAIL'], 'VALUE_TYPE' => 'WORK'],
                 ];
             }
-            if ($phone !== '') {
-                $fm['PHONE']['n1'] = [
-                    'VALUE'      => $phone,
-                    'VALUE_TYPE' => 'MOBILE',
+            if ($dealData['BUYER_PHONE'] !== '') {
+                $fm['PHONE'] = [
+                    ['VALUE' => $dealData['BUYER_PHONE'], 'VALUE_TYPE' => 'WORK'],
                 ];
             }
 
-            global $APPLICATION;
-
-            $contactEntity = new \CCrmContact(false);
-            $multiEntity   = new \CCrmFieldMulti();
-
-            if ($contactId > 0) {
-                if (!empty($fm)) {
-                    $multiEntity->SetFields('CONTACT', $contactId, $fm);
-                }
-
-                $res = $contactEntity->Update(
-                    $contactId,
-                    $contactFields,
-                    true,
-                    true,
-                    ['CURRENT_USER' => $userId]
+            $existingContactId = 0;
+            if ($dealData['BUYER_EMAIL'] !== '') {
+                $rsContact = \CCrmContact::GetListEx(
+                    [],
+                    ['=EMAIL' => $dealData['BUYER_EMAIL']],
+                    false,
+                    ['nTopCount' => 1],
+                    ['ID']
                 );
+                if ($arContact = $rsContact->Fetch()) {
+                    $existingContactId = (int)$arContact['ID'];
+                }
+            }
 
-                if (!$res) {
+            if ($existingContactId > 0) {
+                $contactId = $existingContactId;
+
+                $ok = $contactEntity->Update($contactId, $contactFields, true, ['CURRENT_USER' => $userId]);
+                if (!$ok) {
                     $e = $APPLICATION->GetException();
                     throw new \RuntimeException($e ? $e->GetString() : 'Contact update failed.');
                 }
@@ -317,6 +282,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_bitrix_sessid()) {
                 $dealFields['UF_CRM_1756215544'] = $brokerAgencyName;
             }
 
+            if ($brokerCommission !== '') {
+                $dealFields['UF_CRM_1763304021510'] = (float)$brokerCommission;
+            }
+
             $unitBinding = 'T408_' . (int)$unitInfo['ID'];
             $dealFields['UF_CRM_1756215507'] = $unitBinding;
 
@@ -338,6 +307,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_bitrix_sessid()) {
 
             $dealId = (int)$result->getId();
 
+            if ($eoiFileId > 0) {
+                file_put_contents($logFile, date('Y-m-d H:i:s') . " Trying to attach file $eoiFileId to deal $dealId\n", FILE_APPEND);
+                
+                $sql = "INSERT INTO b_uts_crm_deal (VALUE_ID, UF_CRM_1756976242324) VALUES ($dealId, $eoiFileId) ON DUPLICATE KEY UPDATE UF_CRM_1756976242324 = $eoiFileId";
+                $GLOBALS['DB']->Query($sql);
+                
+                file_put_contents($logFile, date('Y-m-d H:i:s') . " Direct SQL executed\n", FILE_APPEND);
+                
+                $checkDeal = \CCrmDeal::GetByID($dealId);
+                file_put_contents($logFile, date('Y-m-d H:i:s') . " UF_CRM_1756976242324 value after SQL: " . print_r($checkDeal['UF_CRM_1756976242324'], true) . "\n\n", FILE_APPEND);
+            }
+
             $success = true;
             $dealData = [
                 'BUYER_FIRST_NAME'  => '',
@@ -349,6 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_bitrix_sessid()) {
             ];
         } catch (\Throwable $e) {
             $errors[] = $e->getMessage();
+            file_put_contents($logFile, date('Y-m-d H:i:s') . " ERROR: " . $e->getMessage() . "\n\n", FILE_APPEND);
         }
     }
 }

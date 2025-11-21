@@ -266,6 +266,7 @@ function broker_units_get_list(?array $broker, int $page, int $pageSize, ?int &$
 
         $units[] = [
             'ID'              => (int)$item->getId(),
+            'PROJECT_ID'      => is_numeric($projectRaw) ? (int)$projectRaw : 0,
             'PROJECT_NAME'    => $project,
             'UNIT_TITLE'      => $unitTitle,
             'TYPE_NAME'       => $typeName,
