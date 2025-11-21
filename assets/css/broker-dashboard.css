@@ -1,0 +1,274 @@
+.broker-dashboard {
+    margin-bottom: 2rem;
+}
+
+.broker-dashboard__row {
+    gap: 1rem;
+}
+
+.broker-dashboard__summary {
+    width: 100%;
+}
+
+.broker-dashboard__metric {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.broker-dashboard__metric:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-color: #0d6efd;
+}
+
+.broker-dashboard__metric-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.broker-dashboard__metric-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+    text-align: center;
+}
+
+.broker-dashboard__metric-subtext {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-align: center;
+}
+
+.broker-analytics .card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.broker-analytics .card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.broker-analytics .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.25rem;
+}
+
+.broker-analytics .card-header h6 {
+    margin: 0;
+    font-weight: 600;
+    color: #212529;
+}
+
+.broker-analytics .card-body {
+    padding: 1.25rem;
+}
+
+#top-agents-chart,
+#top-agencies-chart,
+#dynamics-chart {
+    width: 100%;
+}
+
+.broker-dashboard__filters {
+    min-width: 300px;
+}
+
+@media (max-width: 768px) {
+    .broker-dashboard__filters {
+        width: 100%;
+        min-width: auto;
+        margin-top: 1rem;
+    }
+}
+
+.broker-analytics .main-grid-table {
+    font-size: 0.9rem;
+}
+
+.broker-analytics .main-grid-row-head {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.broker-analytics .main-grid-cell {
+    padding: 0.75rem;
+}
+
+.broker-tabs {
+    margin-top: 2rem;
+}
+
+.broker-tabs .nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.broker-tabs .nav-link {
+    color: #495057;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.broker-tabs .nav-link:hover {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+}
+
+.broker-tabs .nav-link.active {
+    color: #0d6efd;
+    background-color: transparent;
+    border-bottom-color: #0d6efd;
+}
+
+.broker-dashboard__loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    color: #6c757d;
+}
+
+.broker-dashboard__loading::after {
+    content: "";
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.broker-analytics .rank-cell {
+    font-weight: 600;
+    color: #0d6efd;
+}
+
+.broker-analytics .amount-cell {
+    font-weight: 600;
+    text-align: right;
+}
+
+@media (max-width: 1200px) {
+    .broker-dashboard__row {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 768px) {
+    .broker-dashboard__metric-value {
+        font-size: 1.25rem;
+    }
+    
+    .broker-dashboard__metric-label {
+        font-size: 0.8rem;
+    }
+    
+    .broker-tabs .nav-link {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+.metric-in-progress {
+    border-left: 4px solid #0d6efd;
+}
+
+.metric-booking {
+    border-left: 4px solid #ffc107;
+}
+
+.metric-spa {
+    border-left: 4px solid #198754;
+}
+
+.metric-commissions {
+    border-left: 4px solid #6f42c1;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.broker-dashboard__metric,
+.broker-analytics .card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.broker-dashboard__export {
+    margin-top: 1rem;
+}
+
+.broker-dashboard__export-btn {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.broker-dashboard__tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.broker-dashboard__tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem;
+    background-color: #212529;
+    color: #fff;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    border-radius: 0.25rem;
+    z-index: 1000;
+    margin-bottom: 0.5rem;
+}
+
+.broker-dashboard__no-data {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.broker-dashboard__no-data-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.js-plotly-plot .plotly .modebar {
+    right: 0 !important;
+}
+
+.js-plotly-plot .plotly .modebar-btn {
+    color: #495057 !important;
+}
+
+.js-plotly-plot .plotly .modebar-btn:hover {
+    background-color: #e9ecef !important;
+}

@@ -138,15 +138,6 @@ $showSidebar = !$isSidePanel && !in_array($currentPage, $hideSidebarPages, true)
                                data-broker-sidepanel="Y">
                                 Commission request
                             </a>
-
-                            <a class="nav-link py-2"
-                               href="/broker/analytics.php"
-                               data-broker-sidepanel="Y">
-                                Analytics
-                            </a>
-
-                            <hr>
-                            <a class="nav-link py-1 small" href="/help/">Help</a>
                         </nav>
                     </div>
                 </aside>
