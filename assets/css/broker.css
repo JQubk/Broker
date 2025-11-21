@@ -1,0 +1,7 @@
+#content {width: 100% !important;}
+#workarea {width: 100% !important;}
+#workarea-inner {margin-left: 0 !important;}
+#workarea ul li:before {display: none !important;}
+.main-ui-filter-search {margin: 0 !important;}
+.main-ui-filter-search.main-ui-filter-theme-default.main-ui-filter-set-inside {border: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color) !important;}
+.main-ui-pagination-page.text-center.main-ui-pagination-page-active {color: #000000; text-decoration: none; text-transform: none;}
