@@ -1,8 +1,10 @@
 <?php
+require $_SERVER['DOCUMENT_ROOT'] . '/local/classes/BrokerCabinet/autoload.php';
 
-require $_SERVER['DOCUMENT_ROOT'] . '/include/broker_handler.php';
+use BrokerCabinet\AuthService;
 
-broker_logout();
+$authService = new AuthService();
+$authService->logout();
 
 header('Location: /auth/');
 exit;
